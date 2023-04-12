@@ -1,0 +1,403 @@
+---
+title: "Harvard CYO Boston housing"
+author: "Rekha Rao"
+date: "4/11/2023"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+
+```
+1. Introduction
+
+We will be using the Boston housing dataset which is one of the most popular datasets to be used for machine learning.
+
+1.a. Structure of the Report
+
+
+Section 1 - Introduction and Objective
+
+
+Section 2 - Data Preparation
+
+
+Section 3 - Exploratory Data Analysis 
+
+
+Section 4- Development of the models
+
+
+Section 5 - Conclusion
+
+
+Section 6 - Limitations
+
+
+Section 7 - References
+
+
+
+1.b. Objective 
+
+
+The objective is to build a machine learning model to predict the Median value (MEDV) of owner occupied homes in Boston based on the available features. 
+
+
+
+1.c. Overview
+
+
+The data set has been downloaded from Kaggle. 
+
+Since Kaggle does not allow us to download the files directly, I have downloaded the file to my github and here is the link to the file:
+
+https://github.com/rrao2511/CYO-Harvard-Capstone-Project/raw/main/housing.csv
+
+
+The original Boston housing dataset contains 506 samples and 14 variables. 
+
+
+For the purpose of this report we will be looking only at a subset of the original Boston housing dataset. 
+
+
+Our dataset contains  489 samples and 4 variables which are explained below:
+
+MEDV – 	Median Value of Owner occupied homes
+
+RM   -      	Average number of rooms per dwelling
+
+LSTAT  -   	% lower status of population
+
+PT RATIO - 	Pupil teacher ratio by town
+
+The goal of our analysis is to select the best prediction model which can predict the Median value of owner occupied homes in Boston.
+
+
+
+1.d. Approach 
+
+The steps we will take for this project are:
+
+
+Look at the data structure
+
+
+Data Preparation and Cleaning
+
+
+Exploring the data 
+
+
+Development of models
+
+
+Results 
+
+
+Recommendation of the Model
+
+
+Limitations of the Model
+
+
+
+
+Start of Script 
+
+
+2. Data Preparation and Data Preprocessing
+
+
+ Dataset Source:
+
+ Kaggle is an online platform for data scientists and machine learning students.
+
+ This particular dataset- Boston housing has been downloaded from Kaggle. 
+
+
+ First step - download the Packages needed for this analysis and load the libraries.
+
+
+```{r}
+if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+if(!require(dplyr)) install.packages("dplyr", repos = "http://cran.us.r-project.org")
+if(!require(corrplot)) install.packages("corrplot", repos = "http://cran.us.r-project.org")
+if(!require(randomForest)) install.packages("randomForest", repos = "http://cran.us.r-project.org")
+if(!require(rpart)) install.packages("rpart", repos = "http://cran.us.r-project.org")
+if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
+if(!require(rpart.plot)) install.packages("rpart.plot", repos = "http://cran.us.r-project.org")
+if(!require(e1071)) install.packages("e1071", repos = "http://cran.us.r-project.org")
+
+
+library(tidyverse)
+library(ggplot2)
+library(caret)
+library(dplyr)
+library(corrplot)
+library(randomForest)
+library(rpart)
+library(rpart.plot)
+library(e1071)
+
+```
+
+
+Download the dataset 
+
+Since Kaggle does not allow us to download the files directly, have downloaded the file to my github and here is the link to the file:
+
+https://github.com/rrao2511/CYO-Harvard-Capstone-Project/raw/main/housing.csv
+
+
+Reading the data from the csv file
+
+
+```{r}
+boston_housing<-read.csv("https://github.com/rrao2511/CYO-Harvard-Capstone-Project/raw/main/housing.csv",header=TRUE,sep=",",quote ="\"")
+
+```
+
+
+For the purpose of this analysis we are looking at a subset of the Boston housing set
+
+ First lets look at the data set - checking the dimension.
+ 
+ 
+ This dataset has 489 observations and 4 columns. This is a
+ subset of the original Kaggle dataset.
+ 
+ There are 4 columns and the details of the column are shown
+ below.We will be using all the 4 columns for our analysis.
+ 
+ 
+ We will also look at the structure of the dataset, head and
+ the summary.
+ 
+ 
+ Explanation of Column names and details 
+
+ RM - Average number of rooms per dwelling
+
+ LSTAT - % lower status of population
+
+ PT Ratio - Pupil teacher ratio by town
+
+ MEDV - Median Value of owner occupied homes in $1000s.
+
+
+
+```{r}
+dim(boston_housing)
+
+str(boston_housing)
+
+head(boston_housing)
+
+summary(boston_housing)
+
+```
+
+
+Cleaning up the data 
+
+ Since this dataset is already clean, data cleaning was not needed and it could be used directly for analysis.
+
+
+ Check to see if there are duplicate values and also any missing values.
+```{r}
+sum(duplicated(boston_housing))
+
+
+sum(is.na(boston_housing))
+```
+
+
+3. Exploratory Data Analysis using Data Visualization
+
+Before we start building the model we will understand the data set by doing some Exploratory Data Analysis.
+
+
+ Check the correlation between variables by plotting a correlation graph
+
+
+```{r}
+corrplot(cor(boston_housing), method = "number", type = "upper", diag = FALSE)
+```
+From correlation matrix, we observe that:
+
+
+ Both RM and LSTAT have a strong correlation with MEDV. 
+
+ Median value of owner-occupied homes (in 1000$) increases as average number of rooms per dwelling increases and it decreases if percent of lower status population in the area increases.
+
+ PT Ratio has a positive correlation with LSTAT
+
+
+ Next lets look at Scatter plots to show relationship between
+ Median value and variables
+
+
+
+```{r}
+boston_housing%>%
+  gather(key, val,-MEDV) %>%
+  ggplot(aes(x = val, y = MEDV/1000))+
+  geom_point()+
+  stat_smooth(method = "lm", se = TRUE, col ="blue") +
+  facet_wrap(~key, scales = "free")+
+  theme_grey()+
+  ggtitle("Scatter plot - Dependent variables vs Median value(medv)")
+```
+
+
+From the plots we see that RM and LSTAT have a strong correlation with Median value.
+
+The Median value prices increases as the RM value increases linearly.
+
+The Median value prices tend to decrease with an increase in LSTAT
+
+
+
+4. Developing the Models
+
+ We will use three different models for this project:
+
+ Decision trees, Random Forest and Support Vector Machine.
+
+ We will evaluate the models using Root Mean Squared Error (RMSE).
+
+ The model that best fits the data will be selected.
+
+ First we need to split the data into train sets and test
+ sets:
+
+ Data is split into train and test sets - 80:20 
+
+
+
+```{r}
+set.seed(123)
+bh_index<- sample(nrow(boston_housing),nrow(boston_housing)*.80)
+bh_train<- boston_housing[bh_index,]
+bh_test<- boston_housing[-bh_index,]
+```
+
+
+ Model Development
+
+ Model 1 - Decision trees
+
+
+ Steps - we will create the model using Decision trees on the
+
+ train set, plot  the decision tree, validate on the test set
+ 
+ and finally calculate the RMSE. 
+
+
+```{r}
+bhtree.fit<- rpart(MEDV~., data= bh_train)
+
+rpart.plot(bhtree.fit, type = 3, box.palette = c("red", "green"), fallen.leaves = TRUE)
+
+tree.pred<- predict(bhtree.fit, newdata = bh_test)
+
+tree.rmse<- sqrt(mean((bh_test$MEDV- tree.pred)^2))
+
+cat("Decision Tree RMSE", round(tree.rmse,2),"\n")
+```
+
+
+Model 2 -  Random Forest
+
+ Steps - we will create the model using Random forest on train
+ 
+ set, validate on the test set and finally  calculate the
+
+ RMSE.
+
+
+```{r}
+rf.fit<- randomForest(MEDV~., data= bh_train, ntree= 500, mtry = 3)
+
+rf.pred<- predict(rf.fit, newdata = bh_test)
+
+rf.rmse<- sqrt(mean((bh_test$MEDV - rf.pred)^2))
+
+
+cat("Random Forest RMSE", round(rf.rmse,2), "\n")
+```
+
+Model 3 -  Support Vector Machines (SVM)
+
+ Steps - we will create the model using SVM on train
+ 
+ set, validate on the test set and finally  calculate the
+
+ RMSE.
+
+
+```{r}
+svm.fit<- svm(MEDV~., data = bh_train, kernel= "linear", cost =1)
+
+svm.pred<- predict(svm.fit, newdata = bh_test)
+
+svm.rmse<- sqrt(mean((svm.pred- bh_test$MEDV)^2))
+
+
+cat("SVM RMSE:", svm.rmse, "\n")
+
+```
+
+
+5. Conclusion
+
+
+Create a table for the RMSE values of Decision trees, Random Forest and SVM
+
+
+```{r}
+results_table<- data.frame(Model = c("Decision Tree", "Random Forest", "SVM"),
+                         RMSE= c(tree.rmse,rf.rmse,svm.rmse ))
+```
+
+
+ Based on the above results here are our observations:
+
+ a) The random forest model has the lowest RMSE value of  
+    71805,indicating that it may be the best model for
+    predicting the median value of owner-occupied homes in
+    Boston.
+
+ b) Whereas the Decision tree and the SVM models have higher
+    RMSE values of 79926 and 93156 respectively, indicating
+    that they may not be the best choice for predicting the
+    median value of owner occupied homes.
+
+
+
+
+ 6. Limitations of the Model
+
+ We need to be cautious we need to be cautious when drawing 
+ conclusions based on RMSE values alone, as there may be other
+ factors to consider such as model complexity, 
+ interpretability, and computational efficiency
+
+ Random forest models can be further improved with
+ hyperparameters tuning.
+ 
+ But on account of shortage of time this was not attempted. 
+
+ Similarly the SVM model could be tuned further by changing
+ the parameters and the kernel function.
+ 
+ But on account of shortage of time this was not attempted. 
+
+
+=========== END OF FILE ====================================
